@@ -52,6 +52,18 @@ async function checkVisited() {
   });
   return countries;
 }
+
+async function addUser(name, color) {
+  const result = await db.query(
+    'INSERT INTO users (name, color) VALUES($1, $2) RETURNING id',
+    [name, color],
+  );
+  const data = result.rows[0];
+  const newUserId = data.id;
+
+  return newUserId;
+}
+
 app.get('/', async (req, res) => {
   const users = await checkUsers();
   const countries = await checkVisited();
@@ -81,13 +93,17 @@ app.post('/add', async (req, res) => {
   }
 });
 app.post('/user', async (req, res) => {
-  currentUserId = req.body.user;
-  res.redirect('/');
+  if (req.body.add === 'new') {
+    res.render('new.ejs');
+  } else {
+    currentUserId = req.body.user;
+    res.redirect('/');
+  }
 });
 
 app.post('/new', async (req, res) => {
-  //Hint: The RETURNING keyword can return the data that was inserted.
-  //https://www.postgresql.org/docs/current/dml-returning.html
+  currentUserId = await addUser(req.body.name, req.body.color);
+  res.redirect('/');
 });
 
 app.listen(port, () => {
