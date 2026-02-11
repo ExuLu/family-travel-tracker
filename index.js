@@ -26,6 +26,16 @@ let users = [
   { id: 2, name: 'Jack', color: 'powderblue' },
 ];
 
+async function getCountryCode(country) {
+  const result = await db.query(
+    "SELECT country_code FROM countries WHERE LOWER(country_name) LIKE '%' || $1 || '%';",
+    [input.toLowerCase()],
+  );
+
+  const data = result.rows[0];
+  return data.country_code;
+}
+
 async function checkVisited() {
   const result = await db.query(
     'SELECT country_code FROM visited_countries WHERE user_id = $1',
@@ -50,13 +60,7 @@ app.post('/add', async (req, res) => {
   const input = req.body['country'];
 
   try {
-    const result = await db.query(
-      "SELECT country_code FROM countries WHERE LOWER(country_name) LIKE '%' || $1 || '%';",
-      [input.toLowerCase()],
-    );
-
-    const data = result.rows[0];
-    const countryCode = data.country_code;
+    const countryCode = getCountryCode(input);
     try {
       await db.query(
         'INSERT INTO visited_countries (country_code) VALUES ($1)',
