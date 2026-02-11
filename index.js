@@ -71,6 +71,19 @@ async function addUser(name, color) {
   return newUserId;
 }
 
+async function renderError(res, err) {
+  const countries = await checkVisited();
+  const users = await checkUsers();
+
+  res.render('index.ejs', {
+    countries,
+    total: countries.length,
+    error: err,
+    users,
+    color: 'teal',
+  });
+}
+
 app.get('/', async (req, res) => {
   const users = await checkUsers();
   const countries = await checkVisited();
@@ -81,6 +94,7 @@ app.get('/', async (req, res) => {
     color: 'teal',
   });
 });
+
 app.post('/add', async (req, res) => {
   const input = req.body.country;
 
@@ -90,9 +104,11 @@ app.post('/add', async (req, res) => {
       addCountry(countryCode);
       res.redirect('/');
     } catch (err) {
+      await renderError(res, 'Country has already been added, try again.');
       console.log(err);
     }
   } catch (err) {
+    await renderError(res, 'Country name does not exist.');
     console.log(err);
   }
 });
@@ -101,14 +117,20 @@ app.post('/user', async (req, res) => {
   if (req.body.add === 'new') {
     res.render('new.ejs');
   } else {
-    currentUserId = req.body.user;
+    currentUserId = req.body.user ?? 1;
     res.redirect('/');
   }
 });
 
 app.post('/new', async (req, res) => {
-  currentUserId = await addUser(req.body.name, req.body.color);
-  res.redirect('/');
+  try {
+    currentUserId = await addUser(req.body.name, req.body.color);
+    res.redirect('/');
+  } catch (err) {
+    console.log(err);
+    currentUserId = 1;
+    await renderError('Failed to create new user');
+  }
 });
 
 app.listen(port, () => {
