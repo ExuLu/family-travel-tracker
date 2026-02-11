@@ -21,15 +21,20 @@ app.use(express.static('public'));
 
 let currentUserId = 1;
 
-let users = [
-  { id: 1, name: 'Angela', color: 'teal' },
-  { id: 2, name: 'Jack', color: 'powderblue' },
-];
+// let users = [
+//   { id: 1, name: 'Angela', color: 'teal' },
+//   { id: 2, name: 'Jack', color: 'powderblue' },
+// ];
+
+async function checkUsers() {
+  const result = await db.query('SELECT * from users');
+  return result.rows;
+}
 
 async function getCountryCode(country) {
   const result = await db.query(
     "SELECT country_code FROM countries WHERE LOWER(country_name) LIKE '%' || $1 || '%';",
-    [input.toLowerCase()],
+    [country.toLowerCase()],
   );
 
   const data = result.rows[0];
@@ -48,6 +53,7 @@ async function checkVisited() {
   return countries;
 }
 app.get('/', async (req, res) => {
+  const users = await checkUsers();
   const countries = await checkVisited();
   res.render('index.ejs', {
     countries: countries,
@@ -57,10 +63,10 @@ app.get('/', async (req, res) => {
   });
 });
 app.post('/add', async (req, res) => {
-  const input = req.body['country'];
+  const input = req.body.country;
 
   try {
-    const countryCode = getCountryCode(input);
+    const countryCode = await getCountryCode(input);
     try {
       await db.query(
         'INSERT INTO visited_countries (country_code, user_id) VALUES ($1, $2)',
@@ -74,7 +80,10 @@ app.post('/add', async (req, res) => {
     console.log(err);
   }
 });
-app.post('/user', async (req, res) => {});
+app.post('/user', async (req, res) => {
+  currentUserId = req.body.user;
+  res.redirect('/');
+});
 
 app.post('/new', async (req, res) => {
   //Hint: The RETURNING keyword can return the data that was inserted.
