@@ -71,27 +71,40 @@ async function addUser(name, color) {
   return newUserId;
 }
 
+async function getCurrentColor() {
+  const result = await db.query('SELECT color FROM users WHERE id=$1', [
+    currentUserId,
+  ]);
+  const row = result.rows[0];
+  const color = row.color;
+
+  return color;
+}
+
 async function renderError(res, err) {
   const countries = await checkVisited();
   const users = await checkUsers();
+  const color = await getCurrentColor(users);
 
   res.render('index.ejs', {
     countries,
     total: countries.length,
     error: err,
     users,
-    color: 'teal',
+    color,
   });
 }
 
 app.get('/', async (req, res) => {
   const users = await checkUsers();
   const countries = await checkVisited();
+  const color = await getCurrentColor(users);
+
   res.render('index.ejs', {
     countries: countries,
     total: countries.length,
     users: users,
-    color: 'teal',
+    color,
   });
 });
 
