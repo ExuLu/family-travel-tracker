@@ -22,7 +22,7 @@ app.use(express.static('public'));
 let currentUserId = 1;
 
 async function checkUsers() {
-  const result = await db.query('SELECT * from users');
+  const result = await db.query('SELECT * from users ORDER BY id ASC');
   return result.rows;
 }
 
@@ -109,7 +109,7 @@ app.post('/add', async (req, res) => {
   try {
     const countryCode = await getCountryCode(input);
     try {
-      addCountry(countryCode);
+      await addCountry(countryCode);
       res.redirect('/');
     } catch (err) {
       await renderError(res, 'Country has already been added, try again.');
